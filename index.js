@@ -358,7 +358,7 @@ function generateCalendar() {
     const dayHeaders = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     dayHeaders.forEach(day => {
         const header = document.createElement('div');
-        header.style.cssText = 'background: #4a5568; color: white; padding: 10px; font-weight: bold; text-align: center;';
+        header.style.cssText = 'background: #333; color: white; padding: 10px; font-weight: bold; text-align: center;';
         header.textContent = day;
         calendarGrid.appendChild(header);
     });
@@ -461,7 +461,7 @@ function populateSelects() {
     const serviceSelects = document.querySelectorAll('#eventService');
     serviceSelects.forEach(select => {
         select.innerHTML = data.services.map(service =>
-            `<option value="${service.name}">${service.name} - ${service.price}</option>`
+            `<option value="${service.name}">${service.name}</option>`
         ).join('');
     });
 
@@ -611,7 +611,7 @@ function displayEvents() {
                                     📅 ${session.date} ${session.time} - ${session.photographer}
                                     <br>📍 ${session.location}
                                     <span class="status-badge status-${session.status}">${session.status}</span>
-                                    <button onclick="toggleSessionStatus(${session.id})" class="btn" style="padding: 2px 8px; margin-left: 10px;">
+                                    <button onclick="toggleSessionStatus('${session.id}')" class="btn" style="padding: 2px 8px; margin-left: 10px;">
                                         ${session.status === 'pending' ? '✅' : '🔄'}
                                     </button>
                                     <button onclick="deleteSession(${session.id})" class="btn btn-danger" style="padding: 2px 8px;">🗑️</button>
@@ -674,10 +674,10 @@ function displayConfiguration() {
     // Display services
     const servicesContainer = document.getElementById('servicesList');
     servicesContainer.innerHTML = data.services.map((service, index) => `
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                    <span>${service.name} - ${service.price}</span>
-                    <button class="btn btn-danger" onclick="removeService(${index})" style="padding: 4px 8px;">🗑️</button>
-                </div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+            <span>${service.name}</span>
+            <button class="btn btn-danger" onclick="removeService(${index})" style="padding: 4px 8px;">🗑️</button>
+        </div>
             `).join('');
 }
 
@@ -909,3 +909,44 @@ function clearAllData() {
 document.querySelector('.loading').style.display = 'flex'; // Mostrar
 // ...cuando termina la carga:
 document.querySelector('.loading').style.display = 'none'; // Ocultar
+
+function displayPlanilla() {
+    const tbody = document.querySelector('#planillaTable tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = data.events.map(event => {
+        // Buscar sesiones relacionadas
+        const sesiones = data.sessions
+            .filter(s => s.eventId == event.id)
+            .map(s => `${s.date} ${s.time} (${s.photographer})`)
+            .join('<br>') || '—';
+
+        // Buscar servicios contratados
+        const servicio = event.service || '—';
+
+        // Otros: puedes agregar aquí cualquier otro dato extra si lo necesitas
+        const otros = event.otros || '—';
+
+        return `
+            <tr>
+                <td>${event.client}</td>
+                <td>${event.date}</td>
+                <td>${event.location}</td>
+                <td>${servicio}</td>
+                <td>${otros}</td>
+                <td>${sesiones}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Llama a displayPlanilla cuando se actualicen los datos
+function updateAllDisplays() {
+    updateDashboard();
+    generateCalendar();
+    populateSelects();
+    displayEvents();
+    displayChecklists();
+    displayConfiguration();
+    displayPlanilla(); // <-- Agregado aquí
+}

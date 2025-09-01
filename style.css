@@ -32,7 +32,7 @@ body {
 
 .header h1 {
     color: #111;
-    font-size: 2.5em;
+    font-size: 2em;
     font-weight: 700;
     margin-bottom: 0;
     background: none;
@@ -86,9 +86,26 @@ body {
 
 .nav-tabs {
     display: flex;
-    gap: 10px;
+    flex-direction: column;
+    gap: 8px;
     margin-bottom: 20px;
-    flex-wrap: wrap;
+}
+
+.nav-tabs-row {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-start;
+}
+
+@media (max-width: 900px) {
+    .nav-tabs-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .nav-tabs {
+        gap: 4px;
+    }
 }
 
 .nav-tab {
@@ -217,7 +234,7 @@ body {
 
 .calendar-day.other-month {
     background: #f7fafc;
-    color: #a0aec0;
+    color: #333;
 }
 
 .calendar-day.selected {
@@ -255,7 +272,7 @@ body {
 .form-group label {
     margin-bottom: 8px;
     font-weight: 600;
-    color: #4a5568;
+    color: #333;
 }
 
 .form-group input,
@@ -265,6 +282,8 @@ body {
     border: 2px solid #e2e8f0;
     border-radius: 8px;
     font-size: 16px;
+    background: #222;         /* Fondo oscuro */
+    color: #fff;              /* Texto claro */
     transition: border-color 0.3s ease;
 }
 
@@ -272,8 +291,10 @@ body {
 .form-group select:focus,
 .form-group textarea:focus {
     outline: none;
-    border-color: #444;
-    box-shadow: 0 0 0 3px rgba(34, 34, 34, 0.08);
+    border-color: #888;
+    box-shadow: 0 0 0 3px rgba(136, 136, 136, 0.08);
+    background: #333;
+    color: #fff;
 }
 
 .btn {
@@ -300,14 +321,14 @@ body {
 }
 
 .btn-secondary {
-    background: linear-gradient(135deg, #888, #444);
-    color: white;
-    box-shadow: 0 6px 20px rgba(96, 98, 107, 0.4);
+    background: linear-gradient(135deg, #bbb, #444);
+    color: #222;
+    box-shadow: 0 6px 20px rgba(96, 98, 107, 0.2);
 }
 
 .btn-danger {
     background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-    color: white;
+    color: #fff;
 }
 
 .events-list {
@@ -316,27 +337,93 @@ body {
 }
 
 .event-card {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    border-left: 4px solid transparent;
-    background-image: linear-gradient(white, white), linear-gradient(135deg, #667eea, #764ba2);
-    background-origin: border-box;
-    background-clip: content-box, border-box;
+    background: linear-gradient(135deg, #232526 0%, #414345 100%);
+    border-radius: 18px;
+    padding: 28px 24px;
+    color: #fff;
+    box-shadow: 0 8px 32px rgba(34, 34, 34, 0.15), 0 1.5px 6px rgba(0,0,0,0.08);
+    border-left: 6px solid #888;
+    position: relative;
+    transition: transform 0.18s cubic-bezier(.4,2,.6,1), box-shadow 0.18s;
+    overflow: hidden;
+}
+
+.event-card::before {
+    content: "";
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 120px;
+    height: 120px;
+    background: radial-gradient(circle, rgba(255,255,255,0.09) 0%, rgba(0,0,0,0) 80%);
+    z-index: 0;
 }
 
 .event-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 18px;
+    position: relative;
+    z-index: 1;
 }
 
 .event-title {
-    font-size: 1.2em;
+    font-size: 1.3em;
     font-weight: 700;
-    color: #2d3748;
+    color: #fff;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.10);
+}
+
+.event-card .event-details {
+    font-size: 1em;
+    color: #e0e0e0;
+    margin-bottom: 10px;
+    z-index: 1;
+    position: relative;
+}
+
+.event-card .event-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    font-size: 0.98em;
+    color: #b0b0b0;
+    margin-bottom: 8px;
+    z-index: 1;
+    position: relative;
+}
+
+.event-card .sessions-grid {
+    margin-top: 18px;
+    z-index: 1;
+    position: relative;
+}
+
+.event-card .status-badge {
+    margin-left: 8px;
+    font-size: 0.85em;
+    padding: 2px 7px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.event-card:hover {
+    transform: translateY(-4px) scale(1.015);
+    box-shadow: 0 16px 40px rgba(34,34,34,0.18), 0 2px 8px rgba(0,0,0,0.10);
+    border-left-color: #444;
+}
+
+@media (max-width: 768px) {
+    .event-card {
+        padding: 18px 8px;
+    }
+    .event-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
 }
 
 .sessions-grid {
@@ -347,6 +434,7 @@ body {
 
 .session-item {
     background: #f8faff;
+    color: #222;
     padding: 12px;
     border-radius: 8px;
     border-left: 3px solid #222;
@@ -358,7 +446,8 @@ body {
 }
 
 .client-checklist {
-    background: white;
+    background: #232526;
+    color: #fff;
     border-radius: 12px;
     padding: 20px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
@@ -383,13 +472,13 @@ body {
     align-items: center;
     gap: 12px;
     padding: 10px;
-    background: #f8faff;
+    background: #2e2e2e;
     border-radius: 8px;
     transition: all 0.3s ease;
 }
 
 .checklist-item:hover {
-    background: #edf2ff;
+    background: #575757;
 }
 
 .checklist-item input[type="checkbox"] {
@@ -411,7 +500,8 @@ body {
 }
 
 .modal-content {
-    background-color: white;
+    background-color: #232526; /* Fondo oscuro */
+    color: #fff;   
     margin: 5% auto;
     padding: 30px;
     border-radius: 20px;
@@ -546,4 +636,41 @@ body {
     .dashboard-grid {
         grid-template-columns: 1fr;
     }
+}
+
+.planilla-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+.planilla-table th, .planilla-table td {
+    padding: 12px 8px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+    font-size: 1em;
+}
+.planilla-table th {
+    background: #222;
+    color: #fff;
+}
+.planilla-table tr:last-child td {
+    border-bottom: none;
+}
+@media (max-width: 768px) {
+    .planilla-table th, .planilla-table td {
+        font-size: 0.9em;
+        padding: 8px 4px;
+    }
+}
+
+.logo {
+    height: 56px;
+    width: auto;
+    border-radius: 12px;
+    object-fit: contain;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }

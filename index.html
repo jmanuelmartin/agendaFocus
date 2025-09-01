@@ -12,7 +12,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📸 | FOCUS RIO CUARTO</h1>
+            <img src="focus.jpg" alt="Logo Focus" class="logo" style="height:56px; width:auto; border-radius:12px;">
             
             <div id="connectionStatus" class="connection-status">
                 <div class="status-dot"></div>
@@ -48,11 +48,16 @@
             </div>
 
             <div class="nav-tabs">
-                <button class="nav-tab active" onclick="showTab('dashboard')">Dashboard</button>
-                <button class="nav-tab" onclick="showTab('calendar')">Calendario</button>
-                <button class="nav-tab" onclick="showTab('events')">Eventos</button>
-                <button class="nav-tab" onclick="showTab('checklist')">Checklist</button>
-                <button class="nav-tab" onclick="showTab('config')">Configuración</button>
+                <div class="nav-tabs-row">
+                    <button class="nav-tab active" onclick="showTab('dashboard')">Dashboard</button>
+                    <button class="nav-tab" onclick="showTab('calendar')">Calendario</button>
+                    <button class="nav-tab" onclick="showTab('events')">Eventos</button>
+                </div>
+                <div class="nav-tabs-row">
+                    <button class="nav-tab" onclick="showTab('checklist')">Checklist</button>
+                    <button class="nav-tab" onclick="showTab('config')">Configuración</button>
+                    <button class="nav-tab" onclick="showTab('planilla')">Planilla</button> <!-- <-- AGREGADO -->
+                </div>
             </div>
         </div>
 
@@ -140,7 +145,6 @@
                         <!-- Services will be listed here -->
                     </div>
                     <input type="text" id="newService" placeholder="Nombre del servicio">
-                    <input type="number" id="newServicePrice" placeholder="Precio">
                     <button class="btn btn-secondary" onclick="addService()">Agregar Servicio</button>
                 </div>
             </div>
@@ -150,6 +154,28 @@
                 <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData()">
                 <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 Importar Datos</button>
                 <button class="btn btn-danger" onclick="clearAllData()">🗑️ Limpiar Datos</button>
+            </div>
+        </div>
+
+        <!-- Planilla Tab -->
+        <div class="tab-content" id="planilla">
+            <h2>Planilla de Eventos</h2>
+            <div style="overflow-x:auto;">
+                <table id="planillaTable" class="planilla-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre y Apellido</th>
+                            <th>Fecha de la Fiesta</th>
+                            <th>Lugar de la Fiesta</th>
+                            <th>Servicios Contratados</th>
+                            <th>Otros</th>
+                            <th>Sesiones Realizadas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Aquí se llenarán las filas dinámicamente -->
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
