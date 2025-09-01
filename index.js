@@ -905,3 +905,7 @@ function clearAllData() {
         }
     }
 }
+
+document.querySelector('.loading').style.display = 'flex'; // Mostrar
+// ...cuando termina la carga:
+document.querySelector('.loading').style.display = 'none'; // Ocultar

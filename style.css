@@ -503,6 +503,7 @@ body {
     border-top: 2px solid #0e0f13;
     border-radius: 50%;
     animation: spin 1s linear infinite;
+    display: none; /* Oculto por defecto */
 }
 
 @keyframes spin {
