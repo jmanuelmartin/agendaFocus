@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Business Manager</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📸 Photo Business Manager</h1>
+            
+            <div id="connectionStatus" class="connection-status">
+                <div class="status-dot"></div>
+                <span>Conectado a Firebase</span>
+            </div>
+
+            <!-- Firebase Setup Instructions -->
+            <div id="firebaseSetup" class="firebase-setup">
+                <h3>🔥 Configuración de Firebase</h3>
+                <p><strong>1.</strong> Ve a <a href="https://console.firebase.google.com" target="_blank">Firebase Console</a></p>
+                <p><strong>2.</strong> Crea un nuevo proyecto o selecciona uno existente</p>
+                <p><strong>3.</strong> Habilita Firestore Database en modo de prueba</p>
+                <p><strong>4.</strong> Ve a Configuración del proyecto > Configuración general > Tus apps > Web</p>
+                <p><strong>5.</strong> Copia la configuración y pégala abajo:</p>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>API Key</label>
+                        <input type="text" id="firebaseApiKey" placeholder="AIza...">
+                    </div>
+                    <div class="form-group">
+                        <label>Project ID</label>
+                        <input type="text" id="firebaseProjectId" placeholder="tu-proyecto-123">
+                    </div>
+                    <div class="form-group">
+                        <label>App ID</label>
+                        <input type="text" id="firebaseAppId" placeholder="1:123...">
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" onclick="initializeFirebase()">🚀 Conectar Firebase</button>
+                <button class="btn btn-secondary" onclick="skipFirebase()">⏭️ Usar sin Firebase</button>
+            </div>
+
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showTab('dashboard')">Dashboard</button>
+                <button class="nav-tab" onclick="showTab('calendar')">Calendario</button>
+                <button class="nav-tab" onclick="showTab('events')">Eventos</button>
+                <button class="nav-tab" onclick="showTab('checklist')">Checklist</button>
+                <button class="nav-tab" onclick="showTab('config')">Configuración</button>
+            </div>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <h3>Sesiones Hoy</h3>
+                    <div class="number" id="todaySessions">0</div>
+                    <p>Programadas para hoy</p>
+                </div>
+                <div class="dashboard-card">
+                    <h3>Esta Semana</h3>
+                    <div class="number" id="weekSessions">0</div>
+                    <p>Sesiones programadas</p>
+                </div>
+                <div class="dashboard-card">
+                    <h3>Eventos Activos</h3>
+                    <div class="number" id="activeEvents">0</div>
+                    <p>En proceso</p>
+                </div>
+                <div class="dashboard-card">
+                    <h3>Entregas Pendientes</h3>
+                    <div class="number" id="pendingDeliveries">0</div>
+                    <p>Por entregar</p>
+                </div>
+            </div>
+
+            <div class="calendar-container">
+                <h3>Próximas Sesiones</h3>
+                <div id="upcomingSessions"></div>
+            </div>
+        </div>
+
+        <!-- Calendar Tab -->
+        <div id="calendar" class="tab-content">
+            <div class="calendar-header">
+                <button class="calendar-nav" onclick="previousMonth()">‹ Anterior</button>
+                <h3 id="currentMonth">Enero 2024</h3>
+                <button class="calendar-nav" onclick="nextMonth()">Siguiente ›</button>
+            </div>
+            <div class="calendar-grid" id="calendarGrid">
+                <!-- Calendar will be generated here -->
+            </div>
+            <div style="margin-top: 20px;">
+                <button class="btn btn-primary" onclick="openSessionModal()">+ Nueva Sesión</button>
+            </div>
+        </div>
+
+        <!-- Events Tab -->
+        <div id="events" class="tab-content">
+            <div style="margin-bottom: 20px;">
+                <button class="btn btn-primary" onclick="openEventModal()">+ Nuevo Evento</button>
+            </div>
+            <div id="eventsList" class="events-list">
+                <!-- Events will be listed here -->
+            </div>
+        </div>
+
+        <!-- Checklist Tab -->
+        <div id="checklist" class="tab-content">
+            <div style="margin-bottom: 20px;">
+                <button class="btn btn-primary" onclick="openChecklistModal()">+ Nueva Checklist</button>
+            </div>
+            <div id="checklistContainer" class="checklist-container">
+                <!-- Checklists will be displayed here -->
+            </div>
+        </div>
+
+        <!-- Config Tab -->
+        <div id="config" class="tab-content">
+            <h3>Configuración del Sistema</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Fotógrafos/Equipos</label>
+                    <div id="photographersList">
+                        <!-- Photographers will be listed here -->
+                    </div>
+                    <input type="text" id="newPhotographer" placeholder="Nombre del fotógrafo">
+                    <button class="btn btn-secondary" onclick="addPhotographer()">Agregar Fotógrafo</button>
+                </div>
+                <div class="form-group">
+                    <label>Servicios/Paquetes</label>
+                    <div id="servicesList">
+                        <!-- Services will be listed here -->
+                    </div>
+                    <input type="text" id="newService" placeholder="Nombre del servicio">
+                    <input type="number" id="newServicePrice" placeholder="Precio">
+                    <button class="btn btn-secondary" onclick="addService()">Agregar Servicio</button>
+                </div>
+            </div>
+            <div style="margin-top: 30px;">
+                <button class="btn btn-primary" onclick="syncWithFirebase()">🔄 Sincronizar Firebase</button>
+                <button class="btn btn-primary" onclick="exportData()">📤 Exportar Datos</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData()">
+                <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 Importar Datos</button>
+                <button class="btn btn-danger" onclick="clearAllData()">🗑️ Limpiar Datos</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Session Modal -->
+    <div id="sessionModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('sessionModal')">&times;</span>
+            <h2>Nueva Sesión</h2>
+            <form id="sessionForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Evento</label>
+                        <select id="sessionEvent" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha</label>
+                        <input type="date" id="sessionDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Hora</label>
+                        <input type="time" id="sessionTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Fotógrafo</label>
+                        <select id="sessionPhotographer" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Lugar</label>
+                        <input type="text" id="sessionLocation" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Notas</label>
+                        <textarea id="sessionNotes" rows="3"></textarea>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Guardar Sesión</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Event Modal -->
+    <div id="eventModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('eventModal')">&times;</span>
+            <h2>Nuevo Evento</h2>
+            <form id="eventForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nombre del Cliente</label>
+                        <input type="text" id="eventClient" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono</label>
+                        <input type="tel" id="eventPhone" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo de Evento</label>
+                        <input type="text" id="eventType" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Servicio Contratado</label>
+                        <select id="eventService" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha del Evento</label>
+                        <input type="date" id="eventDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Lugar del Evento</label>
+                        <input type="text" id="eventLocation" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Crear Evento</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Checklist Modal -->
+    <div id="checklistModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('checklistModal')">&times;</span>
+            <h2>Nueva Checklist</h2>
+            <form id="checklistForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Cliente</label>
+                        <select id="checklistClient" required></select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Crear Checklist</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-firestore-compat.min.js"></script>
+    <script src="index.js"></script>
+</body>
+</html>
