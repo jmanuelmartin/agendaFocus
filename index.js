@@ -1,5 +1,67 @@
+// Obtiene la fecha actual en Argentina (UTC-3)
+function getArgentinaDate() {
+    const now = new Date();
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const argTime = new Date(utc + (-3 * 3600000)); // UTC-3
+    return argTime;
+}
+
+// Convierte una fecha a string en formato YYYY-MM-DD en zona horaria Argentina
+function getArgentinaDateString(dateObj = null) {
+    const date = dateObj || getArgentinaDate();
+    const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
+    const argTime = new Date(utc + (-3 * 3600000)); // UTC-3
+    
+    const year = argTime.getFullYear();
+    const month = String(argTime.getMonth() + 1).padStart(2, '0');
+    const day = String(argTime.getDate()).padStart(2, '0');
+    
+    return `${day}/${month}/${year}`; // Cambiado de YYYY-MM-DD a DD/MM/YYYY
+}
+
+// Convierte una fecha string (YYYY-MM-DD) a objeto Date en zona Argentina
+function parseArgentinaDate(dateString) {
+    // Manejar tanto formato DD/MM/YYYY como YYYY-MM-DD para compatibilidad
+    let day, month, year;
+    
+    if (dateString.includes('/')) {
+        // Formato DD/MM/YYYY
+        [day, month, year] = dateString.split('/').map(Number);
+    } else if (dateString.includes('-')) {
+        // Formato YYYY-MM-DD (para compatibilidad con inputs de fecha)
+        [year, month, day] = dateString.split('-').map(Number);
+    }
+    
+    return new Date(year, month - 1, day);
+}
+
+// Obtiene hora actual en formato HH:MM para Argentina
+function getArgentinaTimeString() {
+    const date = getArgentinaDate();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+}
+
+// Compara si dos fechas son el mismo día en Argentina
+function isSameDayArgentina(date1, date2) {
+    return getArgentinaDateString(date1) === getArgentinaDateString(date2);
+}
+
+// Agregar esta función junto con las otras utilidades al inicio del archivo
+function formatDisplayDate(dateString) {
+    if (!dateString) return '—';
+    
+    if (dateString.includes('-')) {
+        // Si viene en formato YYYY-MM-DD, convertir a DD/MM/YYYY
+        const [year, month, day] = dateString.split('-');
+        return `${day}/${month}/${year}`;
+    }
+    return dateString; // Si ya está en formato DD/MM/YYYY
+}
+
 // Global variables
-let currentDate = new Date();
+let currentDate = getArgentinaDate();
 let db = null;
 let isFirebaseConnected = false;
 let data = {
@@ -25,6 +87,25 @@ document.addEventListener('DOMContentLoaded', function () {
     displayEvents();
     displayChecklists();
     displayConfiguration();
+    displayPlanilla();
+    
+    // Establecer fecha actual argentina por defecto en formularios
+    const sessionDateInput = document.getElementById('sessionDate');
+    const eventDateInput = document.getElementById('eventDate');
+
+    // Los inputs HTML date necesitan formato YYYY-MM-DD
+    const today = getArgentinaDate();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const htmlDateFormat = `${year}-${month}-${day}`;
+
+    if (sessionDateInput) {
+        sessionDateInput.value = htmlDateFormat;
+    }
+    if (eventDateInput) {
+        eventDateInput.value = htmlDateFormat;
+    }
 });
 
 // Firebase functions
@@ -91,6 +172,8 @@ function skipFirebase() {
 
 function updateConnectionStatus(connected, message = null) {
     const statusElement = document.getElementById('connectionStatus');
+    if (!statusElement) return; // Evita error si el elemento no existe aún
+
     const dot = statusElement.querySelector('.status-dot');
     const text = statusElement.querySelector('span');
 
@@ -98,12 +181,12 @@ function updateConnectionStatus(connected, message = null) {
 
     if (connected) {
         statusElement.className = 'connection-status';
-        dot.className = 'status-dot';
-        text.textContent = message || 'Conectado a Firebase ✅';
+        if (dot) dot.className = 'status-dot';
+        if (text) text.textContent = message || 'Conectado a Firebase ✅';
     } else {
         statusElement.className = 'connection-status offline';
-        dot.className = 'status-dot offline';
-        text.textContent = message || 'Sin conexión - Modo Local ⚠️';
+        if (dot) dot.className = 'status-dot offline';
+        if (text) text.textContent = message || 'Sin conexión - Modo Local ⚠️';
     }
 }
 
@@ -236,15 +319,6 @@ function showLoading(show) {
     });
 }
 
-function updateAllDisplays() {
-    updateDashboard();
-    generateCalendar();
-    populateSelects();
-    displayEvents();
-    displayChecklists();
-    displayConfiguration();
-}
-
 // Local storage functions (fallback)
 function saveLocalData() {
     try {
@@ -271,36 +345,47 @@ function saveData() {
 }
 
 // Tab management
-function showTab(tabName) {
+function showTab(tabName, el) {
     const tabs = document.querySelectorAll('.tab-content');
     const navTabs = document.querySelectorAll('.nav-tab');
 
+    // ocultar todos
     tabs.forEach(tab => tab.classList.remove('active'));
     navTabs.forEach(nav => nav.classList.remove('active'));
 
-    document.getElementById(tabName).classList.add('active');
-    event.target.classList.add('active');
+    // mostrar el tab seleccionado
+    const selectedTab = document.getElementById(tabName);
+    if (selectedTab) {
+        selectedTab.classList.add('active');
+    }
 
+    if (el) {
+        el.classList.add('active');
+    }
+
+    // refrescar si es necesario
     if (tabName === 'calendar') {
         generateCalendar();
     } else if (tabName === 'dashboard') {
         updateDashboard();
+    } else if (tabName === 'planilla') {
+        displayPlanilla();
     }
 }
 
 // Dashboard functions
 function updateDashboard() {
-    const today = new Date();
+    const today = getArgentinaDate();
+    const todayString = getArgentinaDateString(today);
     const weekFromToday = new Date(today);
     weekFromToday.setDate(today.getDate() + 7);
 
     const todaySessions = data.sessions.filter(session => {
-        const sessionDate = new Date(session.date);
-        return sessionDate.toDateString() === today.toDateString();
+        return session.date === todayString;
     }).length;
 
-    const weekSessions = data.sessions.filter(session => {
-        const sessionDate = new Date(session.date);
+    const weekEvents = data.sessions.filter(session => {
+        const sessionDate = parseArgentinaDate(session.date);
         return sessionDate >= today && sessionDate <= weekFromToday;
     }).length;
 
@@ -308,33 +393,33 @@ function updateDashboard() {
         return event.status !== 'completed';
     }).length;
 
-    const pendingDeliveries = data.checklists.filter(checklist => {
-        return checklist.items.some(item => !item.completed);
-    }).length;
-
     document.getElementById('todaySessions').textContent = todaySessions;
-    document.getElementById('weekSessions').textContent = weekSessions;
+    document.getElementById('weekEvents').textContent = weekEvents;
     document.getElementById('activeEvents').textContent = activeEvents;
-    document.getElementById('pendingDeliveries').textContent = pendingDeliveries;
 
     displayUpcomingSessions();
 }
 
 function displayUpcomingSessions() {
     const container = document.getElementById('upcomingSessions');
+    const today = getArgentinaDate();
+    
     const upcoming = data.sessions
-        .filter(session => new Date(session.date) >= new Date())
-        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .filter(session => {
+            const sessionDate = parseArgentinaDate(session.date);
+            return sessionDate >= today;
+        })
+        .sort((a, b) => parseArgentinaDate(a.date) - parseArgentinaDate(b.date))
         .slice(0, 5);
 
     container.innerHTML = upcoming.map(session => {
         const event = data.events.find(e => e.id === session.eventId);
         return `
-                    <div class="session-item">
-                        <strong>${event ? event.client : 'Cliente'}</strong> - ${session.date} ${session.time}
-                        <br><small>${session.location} | ${session.photographer}</small>
-                    </div>
-                `;
+            <div class="session-item">
+                <strong>${event ? event.client : 'Cliente'}</strong> - ${formatDisplayDate(session.date)} ${session.time}
+                <br><small>${session.location} | ${session.photographer}</small>
+            </div>
+        `;
     }).join('') || '<p>No hay sesiones próximas</p>';
 }
 
@@ -349,7 +434,7 @@ function generateCalendar() {
     startDate.setDate(startDate.getDate() - firstDay.getDay());
 
     document.getElementById('currentMonth').textContent =
-        currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+        currentDate.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
 
     const calendarGrid = document.getElementById('calendarGrid');
     calendarGrid.innerHTML = '';
@@ -377,22 +462,36 @@ function generateCalendar() {
         }
 
         dayElement.innerHTML = `
-                    <div style="font-weight: bold; margin-bottom: 5px;">${cellDate.getDate()}</div>
-                    <div class="day-sessions"></div>
-                `;
+            <div style="font-weight: bold; margin-bottom: 5px;">${cellDate.getDate()}</div>
+            <div class="day-sessions"></div>
+        `;
 
-        // Add sessions for this day
+        // Add sessions for this day - CORREGIDO: convertir todas las fechas al mismo formato
+        const cellDateString = getArgentinaDateString(cellDate);
         const daySessions = data.sessions.filter(session => {
-            const sessionDate = new Date(session.date);
-            return sessionDate.toDateString() === cellDate.toDateString();
+            // Normalizar la fecha de la sesión al formato DD/MM/YYYY
+            let sessionDate = session.date;
+            if (sessionDate.includes('-')) {
+                // Si viene en formato YYYY-MM-DD, convertir a DD/MM/YYYY
+                const [year, month, day] = sessionDate.split('-');
+                sessionDate = `${day}/${month}/${year}`;
+            }
+            return sessionDate === cellDateString;
         });
 
         const sessionsContainer = dayElement.querySelector('.day-sessions');
         daySessions.forEach(session => {
-            const event = data.events.find(e => e.id === session.eventId);
+            const event = data.events.find(e => e.id == session.eventId); // Usar == para comparar número con string
             const sessionElement = document.createElement('div');
             sessionElement.className = 'session-event';
             sessionElement.textContent = `${session.time} ${event ? event.client : 'Cliente'}`;
+            if (event) {
+                sessionElement.style.cursor = "pointer";
+                sessionElement.onclick = (e) => {
+                    e.stopPropagation();
+                    showEventInfoModal(event.id);
+                };
+            }
             sessionsContainer.appendChild(sessionElement);
         });
 
@@ -416,8 +515,12 @@ function selectDate(date) {
     });
     event.currentTarget.classList.add('selected');
 
-    // Pre-fill session date
-    document.getElementById('sessionDate').value = date.toISOString().split('T')[0];
+    // Los inputs HTML date requieren formato YYYY-MM-DD
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    document.getElementById('sessionDate').value = `${year}-${month}-${day}`;
 }
 
 // Modal functions
@@ -449,12 +552,14 @@ window.onclick = function (event) {
 
 // Populate select elements
 function populateSelects() {
-    // Populate photographers
+    // Populate photographers - CORREGIDO: manejar tanto strings como objetos
     const photographerSelects = document.querySelectorAll('#sessionPhotographer');
     photographerSelects.forEach(select => {
-        select.innerHTML = data.photographers.map(photographer =>
-            `<option value="${photographer}">${photographer}</option>`
-        ).join('');
+        select.innerHTML = data.photographers.map(photographer => {
+            // Manejar tanto formato string como objeto
+            const name = typeof photographer === 'string' ? photographer : photographer.name;
+            return `<option value="${name}">${name}</option>`;
+        }).join('');
     });
 
     // Populate services
@@ -486,10 +591,18 @@ function populateChecklistClients() {
 document.getElementById('sessionForm').addEventListener('submit', async function (e) {
     e.preventDefault();
 
+    // CORREGIDO: convertir fecha de input HTML (YYYY-MM-DD) a formato DD/MM/YYYY
+    const inputDate = document.getElementById('sessionDate').value;
+    let formattedDate = inputDate;
+    if (inputDate.includes('-')) {
+        const [year, month, day] = inputDate.split('-');
+        formattedDate = `${day}/${month}/${year}`;
+    }
+
     const session = {
         id: Date.now(),
-        eventId: document.getElementById('sessionEvent').value,
-        date: document.getElementById('sessionDate').value,
+        eventId: parseInt(document.getElementById('sessionEvent').value), // Asegurar que sea número
+        date: formattedDate, // Usar fecha formateada
         time: document.getElementById('sessionTime').value,
         photographer: document.getElementById('sessionPhotographer').value,
         location: document.getElementById('sessionLocation').value,
@@ -515,25 +628,51 @@ document.getElementById('sessionForm').addEventListener('submit', async function
 document.getElementById('eventForm').addEventListener('submit', async function (e) {
     e.preventDefault();
 
+    // CORREGIDO: convertir fecha de input HTML (YYYY-MM-DD) a formato DD/MM/YYYY
+    const inputDate = document.getElementById('eventDate').value;
+    let formattedDate = inputDate;
+    if (inputDate.includes('-')) {
+        const [year, month, day] = inputDate.split('-');
+        formattedDate = `${day}/${month}/${year}`;
+    }
+
     const event = {
         id: Date.now(),
         client: document.getElementById('eventClient').value,
         phone: document.getElementById('eventPhone').value,
         type: document.getElementById('eventType').value,
         service: document.getElementById('eventService').value,
-        date: document.getElementById('eventDate').value,
+        date: formattedDate, // Usar fecha formateada
         location: document.getElementById('eventLocation').value,
-        status: 'active',
-        createdAt: new Date().toISOString()
+        status: 'Activo',
+        createdAt: new Date().toISOString(),
+        archived: false
     };
 
     data.events.push(event);
+
+    // Crear sesión automática para el evento en la fecha del evento
+    const session = {
+        id: Date.now() + 1,
+        eventId: event.id,
+        date: formattedDate, // Usar misma fecha formateada
+        time: "00:00",
+        photographer: data.photographers[0] ? (typeof data.photographers[0] === 'string' ? data.photographers[0] : data.photographers[0].name) : "",
+        location: event.location,
+        notes: "Sesión principal del evento",
+        status: 'pending'
+    };
+    data.sessions.push(session);
+
     saveData();
 
     // Save to Firebase
     if (isFirebaseConnected) {
         const { id, ...eventData } = event;
         await saveToFirebase('events', eventData, id);
+
+        const { id: sessionId, ...sessionData } = session;
+        await saveToFirebase('sessions', sessionData, sessionId);
     }
 
     closeModal('eventModal');
@@ -553,13 +692,14 @@ document.getElementById('checklistForm').addEventListener('submit', async functi
         clientId: clientId,
         clientName: event.client,
         items: [
-            { name: 'Fotos editadas enviadas', completed: false },
-            { name: 'Videos editados enviados', completed: false },
-            { name: 'Fotos sin editar enviadas', completed: false },
-            { name: 'Link de descarga compartido', completed: false },
-            { name: 'Cliente confirmó recepción', completed: false }
+            { name: 'Entrega de fotos [Sesión de día]', completed: false },
+            { name: 'Entrega de fotos [Sesión de noche]', completed: false },
+            { name: 'Entrega de fotos [Sesión de amigos]', completed: false },
+            { name: 'Entrega de fotos [Fiesta]', completed: false },
+            { name: 'Elección de fotos para publicación', completed: false }
         ],
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        archived: false
     };
 
     data.checklists.push(checklist);
@@ -577,31 +717,44 @@ document.getElementById('checklistForm').addEventListener('submit', async functi
     this.reset();
 });
 
-// Display functions
 function displayEvents() {
     const container = document.getElementById('eventsList');
+    if (!container) return;
 
-    if (data.events.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: #666;">No hay eventos creados aún</p>';
-        return;
-    }
+    if (!window.collapsedEvents) window.collapsedEvents = {};
 
-    container.innerHTML = data.events.map(event => {
-        const sessions = data.sessions.filter(s => s.eventId == event.id);
-        const completedSessions = sessions.filter(s => s.status === 'completed').length;
+    const activeEvents = data.events.filter(e => !e.archived);
+    const archivedEvents = data.events.filter(e => e.archived);
 
-        return `
-                    <div class="event-card">
-                        <div class="event-header">
-                            <div>
-                                <div class="event-title">${event.client}</div>
-                                <small>${event.type} - ${event.date} - ${event.location}</small>
-                            </div>
-                            <div>
-                                <span class="status-badge status-${event.status}">${event.status}</span>
-                                <button class="btn btn-danger" onclick="deleteEvent(${event.id})" style="margin-left: 10px; padding: 5px 10px;">🗑️</button>
-                            </div>
+    let html = '';
+
+    // Activos
+    if (activeEvents.length === 0) {
+        html += '<p style="text-align: center; color: #666;">No hay eventos activos</p>';
+    } else {
+        html += activeEvents.map(event => {
+            const sessions = data.sessions.filter(s => s.eventId == event.id);
+            const completedSessions = sessions.filter(s => s.status === 'completed').length;
+            const allSessionsCompleted = sessions.length > 0 && completedSessions === sessions.length;
+            const isCollapsed = !!window.collapsedEvents[event.id];
+
+            return `
+                <div class="event-card" data-event="${event.id}">
+                    <div class="event-header">
+                        <div>
+                            <div class="event-title">${event.client}</div>
+                            <small>${event.type} - ${formatDisplayDate(event.date)} - ${event.location}</small>
                         </div>
+                        <div>
+                            <button class="btn btn-secondary" onclick="toggleCollapseEvent('${event.id}')" style="margin-right:8px;">
+                                <span class="collapse-icon ${isCollapsed ? 'collapsed' : 'expanded'}">⮟</span>
+                            </button>
+                            <span class="status-badge status-${event.status}">${event.status}</span>
+                            ${allSessionsCompleted && !event.archived ? `<button class="btn btn-primary" onclick="archiveEvent('${event.id}')" style="margin-left: 10px;">Archivar</button>` : ''}
+                            <button class="btn btn-danger" onclick="deleteEvent('${event.id}')" style="margin-left: 10px; padding: 5px 10px;">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="event-details" id="event-details-${event.id}" style="display:${isCollapsed ? 'none' : 'block'};">
                         <div><strong>Teléfono:</strong> ${event.phone}</div>
                         <div><strong>Servicio:</strong> ${event.service}</div>
                         <div class="sessions-grid">
@@ -619,66 +772,80 @@ function displayEvents() {
                             `).join('')}
                         </div>
                     </div>
-                `;
-    }).join('');
-}
-
-function displayChecklists() {
-    const container = document.getElementById('checklistContainer');
-
-    if (data.checklists.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: #666;">No hay checklists creadas aún</p>';
-        return;
+                </div>
+            `;
+        }).join('');
     }
 
-    container.innerHTML = data.checklists.map(checklist => {
-        const completedItems = checklist.items.filter(item => item.completed).length;
-        const progress = (completedItems / checklist.items.length) * 100;
-
-        return `
-                    <div class="client-checklist">
-                        <div class="checklist-header">
-                            <div>
-                                <h3>${checklist.clientName}</h3>
-                                <div style="background: #e2e8f0; height: 8px; border-radius: 4px; margin-top: 8px;">
-                                    <div style="background: linear-gradient(135deg, #667eea, #764ba2); height: 100%; width: ${progress}%; border-radius: 4px; transition: width 0.3s ease;"></div>
+    // Archivados
+    html += `
+        <div style="margin-top:32px;">
+            <h4>Archivados</h4>
+            <div id="archivedEvents">
+                ${archivedEvents.length === 0 ? '<p style="color:#888;">No hay eventos archivados</p>' :
+                    archivedEvents.map(event => {
+                        const sessions = data.sessions.filter(s => s.eventId == event.id);
+                        const completedSessions = sessions.filter(s => s.status === 'completed').length;
+                        const isCollapsed = !!window.collapsedEvents[event.id];
+                        return `
+                        <div class="event-card archived" data-event="${event.id}">
+                            <div class="event-header">
+                                <div>
+                                    <div class="event-title">${event.client}</div>
+                                    <small>${event.type} - ${event.date} - ${event.location}</small>
                                 </div>
-                                <small>${completedItems}/${checklist.items.length} completados (${Math.round(progress)}%)</small>
+                                <div>
+                                    <button class="btn btn-secondary" onclick="toggleCollapseEvent('${event.id}')" style="margin-right:8px;">
+                                    <span class="collapse-icon ${isCollapsed ? 'collapsed' : 'expanded'}">⮟</span>
+                                    </button>
+                                    <span class="status-badge status-${event.status}">${event.status}</span>
+                                    <button class="btn btn-primary" onclick="unarchiveEvent('${event.id}')" style="margin-right:8px;">Desarchivar</button>
+                                    <button class="btn btn-danger" onclick="deleteEvent('${event.id}')" style="margin-left: 10px; padding: 5px 10px;">🗑️</button>
+                                </div>
                             </div>
-                            <button class="btn btn-danger" onclick="deleteChecklist(${checklist.id})">🗑️</button>
-                        </div>
-                        <div class="checklist-items">
-                            ${checklist.items.map((item, index) => `
-                                <div class="checklist-item">
-                                    <input type="checkbox" ${item.completed ? 'checked' : ''} 
-                                           onchange="toggleChecklistItem(${checklist.id}, ${index})">
-                                    <span style="${item.completed ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${item.name}</span>
+                            <div class="event-details" id="event-details-${event.id}" style="display:${isCollapsed ? 'none' : 'block'};">
+                                <div><strong>Teléfono:</strong> ${event.phone}</div>
+                                <div><strong>Servicio:</strong> ${event.service}</div>
+                                <div class="sessions-grid">
+                                    <div><strong>Sesiones:</strong> ${completedSessions}/${sessions.length} completadas</div>
+                                    ${sessions.map(session => `
+                                        <div class="session-item">
+                                            📅 ${session.date} ${session.time} - ${session.photographer}
+                                            <br>📍 ${session.location}
+                                            <span class="status-badge status-${session.status}">${session.status}</span>
+                                        </div>
+                                    `).join('')}
                                 </div>
-                            `).join('')}
+                            </div>
                         </div>
-                    </div>
-                `;
-    }).join('');
+                        `;
+                    }).join('')
+                }
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = html;
 }
 
 function displayConfiguration() {
     // Display photographers
     const photographersContainer = document.getElementById('photographersList');
     photographersContainer.innerHTML = data.photographers.map((photographer, index) => `
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                    <span>${photographer}</span>
-                    <button class="btn btn-danger" onclick="removePhotographer(${index})" style="padding: 4px 8px;">🗑️</button>
-                </div>
-            `).join('');
+        <div class="config-item">
+            <span>${typeof photographer === 'string' ? photographer : photographer.name}</span>
+            <button class="btn btn-danger" onclick="removePhotographer(${index})" title="Eliminar fotógrafo">🗑️</button>
+        </div>
+    `).join('');
 
     // Display services
     const servicesContainer = document.getElementById('servicesList');
     servicesContainer.innerHTML = data.services.map((service, index) => `
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+        <div class="config-item">
             <span>${service.name}</span>
-            <button class="btn btn-danger" onclick="removeService(${index})" style="padding: 4px 8px;">🗑️</button>
+            <button class="btn btn-danger" onclick="removeService(${index})" title="Eliminar servicio">🗑️</button>
         </div>
-            `).join('');
+    `).join('');
 }
 
 // Configuration functions
@@ -716,10 +883,9 @@ async function removePhotographer(index) {
 
 async function addService() {
     const name = document.getElementById('newService').value.trim();
-    const price = parseInt(document.getElementById('newServicePrice').value);
 
-    if (name && price) {
-        const service = { name, price };
+    if (name && !data.services.some(s => s.name === name)) {
+        const service = { name };
         data.services.push(service);
         saveData();
 
@@ -730,7 +896,6 @@ async function addService() {
 
         displayConfiguration();
         document.getElementById('newService').value = '';
-        document.getElementById('newServicePrice').value = '';
     }
 }
 
@@ -894,6 +1059,7 @@ function clearAllData() {
                 sessions: [],
                 checklists: []
             };
+            localStorage.removeItem('photoBusinessData'); // Limpia el storage
             saveData();
 
             // Clear Firebase data too
@@ -949,4 +1115,206 @@ function updateAllDisplays() {
     displayChecklists();
     displayConfiguration();
     displayPlanilla(); // <-- Agregado aquí
+}
+
+function showEventInfoModal(eventId) {
+    const event = data.events.find(e => e.id == eventId);
+    if (!event) return;
+
+    // Busca sesiones relacionadas
+    const sessions = data.sessions.filter(s => s.eventId == event.id);
+
+    // Construye el HTML de la info
+    const html = `
+        <h2>🎉 ${event.client}</h2>
+        <p><span class="event-info-label">📅 Tipo:</span> ${event.type}</p>
+        <p><span class="event-info-label">🛎️ Servicio:</span> ${event.service}</p>
+        <p><span class="event-info-label">🗓️ Fecha:</span> ${event.date}</p>
+        <p><span class="event-info-label">📍 Lugar:</span> ${event.location}</p>
+        <p><span class="event-info-label">📞 Teléfono:</span> ${event.phone}</p>
+        <hr>
+        <h3>Sesiones</h3>
+        ${sessions.length === 0 ? '<p style="color:#bbb;">No hay sesiones asociadas.</p>' : `
+            <ul>
+                ${sessions.map(s => `<li>🕒 ${s.date} ${s.time} — ${s.photographer} <span style="color:#bbb;">(${s.location})</span></li>`).join('')}
+            </ul>
+        `}
+    `;
+
+    document.getElementById('eventInfoContent').innerHTML = `
+        <span class="close" onclick="closeModal('eventInfoModal')">&times;</span>
+        ${html}
+    `;
+    document.getElementById('eventInfoModal').style.display = 'block';
+}
+
+function archiveChecklist(checklistId) {
+    const checklist = data.checklists.find(c => c.id === checklistId);
+    if (checklist) {
+        checklist.archived = true;
+        saveData();
+        displayChecklists();
+        updateDashboard();
+    }
+}
+
+function toggleCollapseChecklist(checklistId) {
+    if (!window.collapsedChecklists) window.collapsedChecklists = {};
+    window.collapsedChecklists[checklistId] = !window.collapsedChecklists[checklistId];
+    displayChecklists();
+}
+
+function archiveEvent(eventId) {
+    const event = data.events.find(e => e.id === eventId);
+    if (event) {
+        event.archived = true;
+        event.status = 'Archivado'; // Cambia el estado
+        saveData();
+
+        // Actualiza en Firebase si corresponde
+        if (isFirebaseConnected) {
+            const { id, ...eventData } = event;
+            saveToFirebase('events', eventData, id);
+        }
+
+        displayEvents();
+        updateDashboard();
+    }
+}
+
+function toggleCollapseEvent(eventId) {
+    if (!window.collapsedEvents) window.collapsedEvents = {};
+    window.collapsedEvents[eventId] = !window.collapsedEvents[eventId];
+    displayEvents();
+}
+
+function displayChecklists() {
+    const container = document.getElementById('checklistContainer');
+    if (!container) return;
+
+    // Estado de colapso por checklist (en memoria)
+    if (!window.collapsedChecklists) window.collapsedChecklists = {};
+
+    // Separar activas y archivadas
+    const active = data.checklists.filter(c => !c.archived);
+    const archived = data.checklists.filter(c => c.archived);
+
+    // Renderizar activas
+    let html = '';
+    if (active.length === 0) {
+        html += '<p style="text-align: center; color: #666;">No hay checklists activas</p>';
+    } else {
+        html += active.map((checklist) => {
+            const completedItems = checklist.items.filter(item => item.completed).length;
+            const progress = (completedItems / checklist.items.length) * 100;
+            const allCompleted = completedItems === checklist.items.length;
+            const isCollapsed = !!window.collapsedChecklists[checklist.id];
+
+            return `
+                <div class="client-checklist" data-checklist="${checklist.id}">
+                    <div class="checklist-header">
+                        <div>
+                            <h3>${checklist.clientName}</h3>
+                            <div style="background: #e2e8f0; height: 8px; border-radius: 4px; margin-top: 8px;">
+                                <div style="background: linear-gradient(135deg, #667eea, #764ba2); height: 100%; width: ${progress}%; border-radius: 4px; transition: width 0.3s ease;"></div>
+                            </div>
+                            <small>${completedItems}/${checklist.items.length} completados (${Math.round(progress)}%)</small>
+                        </div>
+                        <div>
+                            <button class="btn btn-secondary" onclick="toggleCollapseChecklist(${checklist.id})" style="margin-right:8px;">
+                                <span class="collapse-icon ${isCollapsed ? 'collapsed' : 'expanded'}">⮟</span>
+                            </button>
+                            ${allCompleted && !checklist.archived ? `<button class="btn btn-primary" onclick="archiveChecklist(${checklist.id})">Archivar</button>` : ''}
+                            <button class="btn btn-danger" onclick="deleteChecklist(${checklist.id})">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="checklist-items" id="checklist-items-${checklist.id}" style="display:${isCollapsed ? 'none' : 'block'};">
+                        ${checklist.items.map((item, index) => `
+                            <div class="checklist-item">
+                                <input type="checkbox" ${item.completed ? 'checked' : ''} ${checklist.archived ? 'disabled' : ''}
+                                       onchange="toggleChecklistItem(${checklist.id}, ${index})">
+                                <span style="${item.completed ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${item.name}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Renderizar archivadas
+    html += `
+        <div style="margin-top:32px;">
+            <h4>Archivadas</h4>
+            <div id="archivedChecklists">
+                ${archived.length === 0 ? '<p style="color:#888;">No hay checklists archivadas</p>' :
+                    archived.map(checklist => {
+                        const isCollapsed = !!window.collapsedChecklists[checklist.id];
+                        return `
+                        <div class="client-checklist archived" data-checklist="${checklist.id}">
+                            <div class="checklist-header">
+                                <div>
+                                    <h3>${checklist.clientName}</h3>
+                                    <small>Archivada el ${new Date(checklist.createdAt).toLocaleDateString()}</small>
+                                </div>
+                                <div>
+                                    <button class="btn btn-secondary" onclick="toggleCollapseChecklist(${checklist.id})" style="margin-right:8px;">
+                                        <span class="collapse-icon ${isCollapsed ? 'collapsed' : 'expanded'}">⮟</span>
+                                    </button>
+                                    <button class="btn btn-primary" onclick="unarchiveChecklist(${checklist.id})" style="margin-right:8px;">Desarchivar</button>
+                                    <button class="btn btn-danger" onclick="deleteChecklist(${checklist.id})">🗑️</button>
+                                </div>
+                            </div>
+                            <div class="checklist-items" id="checklist-items-${checklist.id}" style="display:${isCollapsed ? 'none' : 'block'};">
+                                ${checklist.items.map((item, index) => `
+                                    <div class="checklist-item">
+                                        <input type="checkbox" ${item.completed ? 'checked' : ''} disabled>
+                                        <span style="${item.completed ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${item.name}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                    }).join('')
+                }
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = html;
+}
+
+function unarchiveChecklist(checklistId) {
+    const checklist = data.checklists.find(c => c.id === checklistId);
+    if (checklist) {
+        checklist.archived = false;
+        saveData();
+
+        // Actualiza en Firebase si corresponde
+        if (isFirebaseConnected) {
+            const { id, ...checklistData } = checklist;
+            saveToFirebase('checklists', checklistData, id);
+        }
+
+        displayChecklists();
+        updateDashboard();
+    }
+}
+
+function unarchiveEvent(eventId) {
+    const event = data.events.find(e => e.id === eventId);
+    if (event) {
+        event.archived = false;
+        event.status = 'Activo'; // <-- Cambia el estado a activo
+        saveData();
+
+        // Actualiza en Firebase si corresponde
+        if (isFirebaseConnected) {
+            const { id, ...eventData } = event;
+            saveToFirebase('events', eventData, id);
+        }
+
+        displayEvents();
+        updateDashboard();
+    }
 }

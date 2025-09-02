@@ -49,14 +49,14 @@
 
             <div class="nav-tabs">
                 <div class="nav-tabs-row">
-                    <button class="nav-tab active" onclick="showTab('dashboard')">Dashboard</button>
-                    <button class="nav-tab" onclick="showTab('calendar')">Calendario</button>
-                    <button class="nav-tab" onclick="showTab('events')">Eventos</button>
+                    <button class="nav-tab active" onclick="showTab('dashboard', this)">Dashboard</button>
+                    <button class="nav-tab" onclick="showTab('calendar', this)">Calendario</button>
+                    <button class="nav-tab" onclick="showTab('events', this)">Eventos</button>
                 </div>
                 <div class="nav-tabs-row">
-                    <button class="nav-tab" onclick="showTab('checklist')">Checklist</button>
-                    <button class="nav-tab" onclick="showTab('config')">Configuración</button>
-                    <button class="nav-tab" onclick="showTab('planilla')">Planilla</button> <!-- <-- AGREGADO -->
+                    <button class="nav-tab" onclick="showTab('checklist', this)">Checklist</button>
+                    <button class="nav-tab" onclick="showTab('planilla', this)">Planilla</button>
+                    <button class="nav-tab" onclick="showTab('config', this)">Configuración</button>
                 </div>
             </div>
         </div>
@@ -71,18 +71,13 @@
                 </div>
                 <div class="dashboard-card">
                     <h3>Esta Semana</h3>
-                    <div class="number" id="weekSessions">0</div>
-                    <p>Sesiones programadas</p>
+                    <div class="number" id="weekEvents">0</div>
+                    <p>Eventos programados</p>
                 </div>
                 <div class="dashboard-card">
                     <h3>Eventos Activos</h3>
                     <div class="number" id="activeEvents">0</div>
                     <p>En proceso</p>
-                </div>
-                <div class="dashboard-card">
-                    <h3>Entregas Pendientes</h3>
-                    <div class="number" id="pendingDeliveries">0</div>
-                    <p>Por entregar</p>
                 </div>
             </div>
 
@@ -127,40 +122,10 @@
             </div>
         </div>
 
-        <!-- Config Tab -->
-        <div id="config" class="tab-content">
-            <h3>Configuración del Sistema</h3>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Fotógrafos/Equipos</label>
-                    <div id="photographersList">
-                        <!-- Photographers will be listed here -->
-                    </div>
-                    <input type="text" id="newPhotographer" placeholder="Nombre del fotógrafo">
-                    <button class="btn btn-secondary" onclick="addPhotographer()">Agregar Fotógrafo</button>
-                </div>
-                <div class="form-group">
-                    <label>Servicios/Paquetes</label>
-                    <div id="servicesList">
-                        <!-- Services will be listed here -->
-                    </div>
-                    <input type="text" id="newService" placeholder="Nombre del servicio">
-                    <button class="btn btn-secondary" onclick="addService()">Agregar Servicio</button>
-                </div>
-            </div>
-            <div style="margin-top: 30px;">
-                <button class="btn btn-primary" onclick="syncWithFirebase()">🔄 Sincronizar Firebase</button>
-                <button class="btn btn-primary" onclick="exportData()">📤 Exportar Datos</button>
-                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData()">
-                <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 Importar Datos</button>
-                <button class="btn btn-danger" onclick="clearAllData()">🗑️ Limpiar Datos</button>
-            </div>
-        </div>
-
         <!-- Planilla Tab -->
         <div class="tab-content" id="planilla">
             <h2>Planilla de Eventos</h2>
-            <div style="overflow-x:auto;">
+            <div>
                 <table id="planillaTable" class="planilla-table">
                     <thead>
                         <tr>
@@ -176,6 +141,37 @@
                         <!-- Aquí se llenarán las filas dinámicamente -->
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- Config Tab -->
+        <div id="config" class="tab-content">
+            <h3>Configuración del Sistema</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Fotógrafos/Equipos</label>
+                    <div id="photographersList"></div>
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <input type="text" id="newPhotographer" placeholder="Nombre del fotógrafo" style="flex:1;">
+                        <button class="btn btn-secondary" onclick="addPhotographer()">Agregar Fotógrafo</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Servicios/Paquetes</label>
+                    <div id="servicesList"></div>
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <input type="text" id="newService" placeholder="Nombre del servicio" style="flex:1;">
+                        <button class="btn btn-secondary" onclick="addService()">Agregar Servicio</button>
+                    </div>
+                </div>
+            <div style="margin-top: 30px;">
+                <div class="config-actions">
+                    <button class="btn btn-primary" onclick="syncWithFirebase()">🔄 Sincronizar Firebase</button>
+                    <button class="btn btn-primary" onclick="exportData()">📤 Exportar Datos</button>
+                    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData()">
+                    <button class="btn btn-primary" onclick="document.getElementById('importFile').click()">📥 Importar Datos</button>
+                    <button class="btn btn-danger" onclick="clearAllData()">🗑️ Limpiar Datos</button>
+                </div>
             </div>
         </div>
     </div>
@@ -274,6 +270,14 @@
     <div class="loading" style="display: none;">
         <div class="spinner"></div>
         <span>Cargando...</span>
+    </div>
+
+    <!-- Modal de información de evento -->
+    <div id="eventInfoModal" class="modal">
+    <div class="modal-content" id="eventInfoContent">
+        <span class="close" onclick="closeModal('eventInfoModal')">&times;</span>
+        <!-- Aquí se llenará la info del evento dinámicamente -->
+    </div>
     </div>
 
     <!-- Firebase SDK -->

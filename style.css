@@ -432,12 +432,31 @@ body {
     margin-top: 15px;
 }
 
+#upcomingSessions {
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
 .session-item {
-    background: #f8faff;
-    color: #222;
-    padding: 12px;
-    border-radius: 8px;
-    border-left: 3px solid #222;
+    background: #232526;
+    color: #fff;
+    padding: 16px 18px;
+    border-radius: 10px;
+    border-left: 4px solid #444;
+    margin-bottom: 0;
+    box-shadow: 0 2px 8px rgba(34,34,34,0.08);
+    transition: background 0.2s;
+}
+
+.session-item strong {
+    font-size: 1.1em;
+    color: #fff;
+}
+
+.session-item small {
+    color: #bbb;
 }
 
 .checklist-container {
@@ -673,4 +692,158 @@ body {
     border-radius: 12px;
     object-fit: contain;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.client-checklist.archived {
+    opacity: 0.7;
+    background: #2e2e2e;
+}
+
+#archivedEvents {
+    display: flex;
+    flex-direction: column;
+    gap: 28px; /* Más separación entre eventos archivados */
+    margin-top: 18px;
+}
+
+.collapse-icon {
+    display: inline-block;
+    transition: transform 0.3s cubic-bezier(.4,2,.6,1);
+}
+.collapse-icon.collapsed {
+    transform: rotate(-90deg);
+}
+.collapse-icon.expanded {
+    transform: rotate(0deg);
+}
+
+#eventInfoModal .modal-content {
+    background: linear-gradient(135deg, #232526 0%, #414345 100%);
+    color: #fff;
+    border-radius: 20px;
+    padding: 36px 32px 28px 32px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+    max-width: 420px;
+    width: 95vw;
+    position: relative;
+    font-family: 'Oswald', sans-serif;
+    animation: modalFadeIn 0.3s ease;
+}
+
+#eventInfoModal h2 {
+    font-size: 2em;
+    margin-bottom: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #fff;
+}
+
+#eventInfoModal p {
+    margin: 8px 0 0 0;
+    font-size: 1.08em;
+    color: #e0e0e0;
+}
+
+#eventInfoModal hr {
+    border: none;
+    border-top: 1.5px solid #444;
+    margin: 18px 0 14px 0;
+}
+
+#eventInfoModal h3 {
+    font-size: 1.1em;
+    margin-bottom: 8px;
+    color: #b6b6b6;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+#eventInfoModal ul {
+    padding-left: 18px;
+    margin: 0 0 8px 0;
+}
+
+#eventInfoModal li {
+    margin-bottom: 6px;
+    font-size: 1em;
+    color: #fff;
+    list-style: disc inside;
+}
+
+#eventInfoModal .event-info-label {
+    color: #bbb;
+    font-weight: 600;
+    margin-right: 6px;
+}
+
+#eventInfoModal .close {
+    color: #fff;
+    font-size: 2em;
+    font-weight: bold;
+    cursor: pointer;
+    position: absolute;
+    top: 18px;
+    right: 28px;
+    background: none;
+    border: none;
+    transition: color 0.2s;
+    z-index: 2;
+}
+
+#eventInfoModal .close:hover {
+    color: #ff6b6b;
+}
+
+@media (max-width: 600px) {
+    #eventInfoModal .modal-content {
+        padding: 18px 8px 18px 8px;
+        max-width: 98vw;
+    }
+    #eventInfoModal h2 {
+        font-size: 1.3em;
+    }
+}
+
+.event-card.archived {
+    margin-bottom: 0;
+    opacity: 0.7;
+    background: #2e2e2e;
+    border-left: 6px solid #888;
+    box-shadow: 0 4px 18px rgba(34,34,34,0.10);
+}
+
+.config-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 10px;
+    background: #232526;
+    color: #fff;
+    border-radius: 8px;
+    padding: 10px 16px;
+    box-shadow: 0 2px 8px rgba(34,34,34,0.08);
+    transition: background 0.2s;
+}
+.config-item span {
+    flex: 1;
+    font-size: 1.08em;
+    font-weight: 500;
+}
+.config-item .btn-danger {
+    padding: 4px 10px;
+    font-size: 1em;
+}
+.config-item .btn-danger:hover {
+    background: linear-gradient(135deg, #ff6b6b, #c0392b);
+    color: #fff;
+}
+.form-group input[type="text"], .form-group input[type="number"] {
+    margin-bottom: 8px;
+}
+
+.config-actions {
+    display: flex;
+    flex-wrap: wrap;   /* para que se acomoden si no entra en una sola fila */
+    gap: 12px;         /* margen uniforme entre botones */
+    margin-top: 30px;
 }
